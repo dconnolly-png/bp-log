@@ -1,0 +1,881 @@
+<!DOCTYPE html>
+<html lang="en-GB" data-theme="auto">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#b4233c">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'none'; font-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<title>BP Log</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+:root{--bg:#f6f4f2;--card:#fff;--text:#1d1b1a;--muted:#6b6560;--line:#e5e0db;--accent:#b4233c;--accent-ink:#fff;--sys:#c0392b;--dia:#2c6fbb;--pulse:#8a8580;--normal:#2e7d4f;--low:#5b6bbf;--s1:#c98a00;--s2:#d4561c;--severe:#b00020;--shadow:0 1px 2px rgba(0,0,0,.06),0 2px 8px rgba(0,0,0,.05);color-scheme:light}
+[data-theme=dark]{--bg:#141312;--card:#1f1d1c;--text:#f1ede9;--muted:#a59e97;--line:#36322f;--accent:#e0485f;--sys:#ff6b5b;--dia:#5fa3ff;--pulse:#a8a29c;--normal:#4cc27f;--low:#8f9cff;--s1:#f0b429;--s2:#ff8a4c;--severe:#ff4d6a;--shadow:none;color-scheme:dark}
+@media (prefers-color-scheme:dark){[data-theme=auto]{--bg:#141312;--card:#1f1d1c;--text:#f1ede9;--muted:#a59e97;--line:#36322f;--accent:#e0485f;--sys:#ff6b5b;--dia:#5fa3ff;--pulse:#a8a29c;--normal:#4cc27f;--low:#8f9cff;--s1:#f0b429;--s2:#ff8a4c;--severe:#ff4d6a;--shadow:none;color-scheme:dark}}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;font:16px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--text);padding-bottom:calc(76px + env(safe-area-inset-bottom));-webkit-tap-highlight-color:transparent}
+header{position:sticky;top:0;z-index:5;background:var(--bg);padding:calc(12px + env(safe-area-inset-top)) 16px 10px;display:flex;align-items:center;justify-content:space-between;max-width:640px;margin:0 auto}
+header h1{font-size:21px;margin:0;letter-spacing:-.01em}
+header h1 b{color:var(--accent)}
+.iconbtn{background:none;border:0;color:var(--muted);padding:8px;border-radius:10px;font:inherit}
+main{max-width:640px;margin:0 auto;padding:0 12px}
+.card{background:var(--card);border-radius:16px;padding:16px;margin:0 0 12px;box-shadow:var(--shadow)}
+.cards{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+.cards .card{margin:0}
+h2{font-size:17px;margin:0 0 12px}
+p{margin:0 0 10px}
+.label{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;font-weight:700}
+.bignum{font-size:32px;font-weight:750;letter-spacing:-.02em;line-height:1.1;margin:6px 0 4px;font-variant-numeric:tabular-nums}
+.bignum small{font-size:14px;font-weight:500;color:var(--muted);letter-spacing:0}
+.muted{color:var(--muted)}
+.small{font-size:13px}
+.badge{display:inline-block;padding:2px 9px;border-radius:999px;font-size:12px;font-weight:700;color:#fff;background:var(--c);white-space:nowrap}
+.c-normal{--c:var(--normal)}.c-low{--c:var(--low)}.c-s1{--c:var(--s1)}.c-s2{--c:var(--s2)}.c-severe{--c:var(--severe)}
+.dot{width:10px;height:10px;border-radius:50%;background:var(--c);flex:none}
+.trend{font-size:13px;margin-top:6px}
+input,select{font:inherit;color:inherit;background:var(--bg);border:1.5px solid var(--line);border-radius:12px;padding:11px 12px;width:100%;min-height:48px}
+input:focus,select:focus{outline:none;border-color:var(--accent)}
+.bp-inputs{display:grid;grid-template-columns:1fr auto 1fr .8fr;gap:8px;align-items:end;margin-bottom:12px}
+.bp-inputs input{font-size:28px;font-weight:700;text-align:center;padding:8px 2px;font-variant-numeric:tabular-nums}
+.bp-inputs label span,.row>span,.seg>span{display:block;font-size:13px;color:var(--muted);margin-bottom:5px;font-weight:600}
+.slash{font-size:28px;color:var(--muted);padding-bottom:10px}
+.row{display:block;margin-bottom:12px}
+.check{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+.check input{width:22px;height:22px;min-height:0;accent-color:var(--accent)}
+.seg{margin-bottom:12px}
+.seg .opts{display:flex;background:var(--bg);border:1.5px solid var(--line);border-radius:12px;padding:3px;gap:3px}
+.seg button{flex:1;border:0;background:transparent;color:inherit;font:inherit;font-size:15px;padding:9px 4px;border-radius:9px;min-height:42px}
+.seg button.on{background:var(--card);box-shadow:0 1px 3px rgba(0,0,0,.15);font-weight:700;color:var(--accent)}
+button{cursor:pointer}
+.primary,.secondary{display:block;width:100%;font:inherit;font-weight:700;padding:13px;min-height:50px;border-radius:14px}
+.primary{background:var(--accent);color:var(--accent-ink);border:0}
+.secondary{background:var(--card);color:var(--text);border:1.5px solid var(--line)}
+.danger{color:var(--severe);border-color:var(--severe)}
+.primary.danger{background:var(--severe);color:#fff}
+.btns{display:flex;flex-direction:column;gap:8px;margin-top:6px}
+.err{color:var(--severe);font-size:14px;min-height:0;margin:0 0 8px}
+.warn{border-left:5px solid var(--severe)}
+.ok{border-left:5px solid var(--normal)}
+nav{position:fixed;left:0;right:0;bottom:0;z-index:10;background:var(--card);border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(5,1fr);padding:4px 4px calc(4px + env(safe-area-inset-bottom))}
+nav button{background:none;border:0;color:var(--muted);font:inherit;font-size:11px;font-weight:600;display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 0;border-radius:12px}
+nav svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+nav button.active{color:var(--accent)}
+.day-h{display:flex;justify-content:space-between;align-items:baseline;font-size:13px;color:var(--muted);font-weight:700;margin:16px 4px 6px}
+.group{border-radius:14px;overflow:hidden;box-shadow:var(--shadow);background:var(--card)}
+.item{display:flex;gap:12px;align-items:center;width:100%;text-align:left;background:var(--card);border:0;border-bottom:1px solid var(--line);color:inherit;font:inherit;padding:12px 14px}
+.group .item:last-child{border-bottom:0}
+.item .t{font-variant-numeric:tabular-nums;width:46px;color:var(--muted);font-size:14px;flex:none}
+.item .v{font-weight:750;font-size:18px;font-variant-numeric:tabular-nums}
+.item .grow{flex:1;min-width:0}
+.item .m{font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pill{font-size:18px;width:10px;text-align:center}
+table{width:100%;border-collapse:collapse;font-size:14px;font-variant-numeric:tabular-nums}
+th,td{text-align:left;padding:8px 4px;border-bottom:1px solid var(--line);vertical-align:middle}
+th{font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.04em}
+tr:last-child td{border-bottom:0}
+td.good{color:var(--normal);font-weight:700}
+.chart{width:100%;height:auto;display:block}
+.chart text{font-size:10px;fill:var(--muted)}
+.chart .grid{stroke:var(--line);stroke-width:1}
+.chart .thr{stroke:var(--s1);stroke-dasharray:4 4;opacity:.8}
+.chart .ln{fill:none;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
+.chart .avg{stroke-width:3;stroke-dasharray:7 5;opacity:.45}
+.s-sys{stroke:var(--sys)}.s-dia{stroke:var(--dia)}.s-pulse{stroke:var(--pulse)}
+.f-sys{fill:var(--sys)}.f-dia{fill:var(--dia)}.f-pulse{fill:var(--pulse)}
+.chart .medl{stroke:var(--accent);stroke-width:1;opacity:.35}
+.chart .medm{fill:var(--accent)}
+.lg{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12px;color:var(--muted);margin:10px 0 4px}
+.lg i{display:inline-block;width:16px;height:3px;border-radius:2px;background:var(--c);vertical-align:middle;margin-right:5px}
+.lg i.d{background:repeating-linear-gradient(90deg,var(--c) 0 5px,transparent 5px 8px);opacity:.6}
+dialog{border:0;border-radius:20px;padding:0;background:var(--card);color:var(--text);width:min(92vw,440px);max-height:90vh}
+dialog::backdrop{background:rgba(0,0,0,.5)}
+.dbody{padding:20px}
+#toast{position:fixed;left:50%;bottom:calc(86px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--text);color:var(--bg);padding:10px 16px;border-radius:12px;font-size:14px;font-weight:600;z-index:60;opacity:0;transition:opacity .2s;pointer-events:none;max-width:90vw;text-align:center}
+#toast.show{opacity:1}
+#lock{position:fixed;inset:0;z-index:50;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;padding:20px}
+.lock-logo{width:64px;height:64px;border-radius:16px}
+.pdots{display:flex;gap:16px}
+.pdots i{width:15px;height:15px;border-radius:50%;border:2px solid var(--text)}
+.pdots i.f{background:var(--text)}
+.pdots.shake{animation:shake .4s}
+@keyframes shake{20%,60%{transform:translateX(-10px)}40%,80%{transform:translateX(10px)}}
+.keypad{display:grid;grid-template-columns:repeat(3,76px);gap:14px}
+.keypad button{height:76px;border-radius:50%;border:0;background:var(--card);color:var(--text);font:inherit;font-size:28px;font-weight:600;box-shadow:var(--shadow)}
+.keypad button.blank{visibility:hidden}
+.link{background:none;border:0;color:var(--muted);font:inherit;font-size:14px;text-decoration:underline}
+.legend-cats td:first-child{width:110px}
+#printArea{display:none}
+@media (max-width:360px){.bignum{font-size:26px}.bp-inputs input{font-size:24px}}
+@media print{
+  html[data-theme]{--bg:#fff;--card:#fff;--text:#000;--muted:#555;--line:#ccc;--sys:#c0392b;--dia:#2c6fbb;--pulse:#888;--accent:#b4233c;--normal:#2e7d4f;--low:#5b6bbf;--s1:#c98a00;--s2:#d4561c;--severe:#b00020}
+  body{background:#fff;color:#000;padding:0;font-size:12px}
+  body>*:not(#printArea){display:none!important}
+  #printArea{display:block}
+  #printArea h1{font-size:20px;margin:0 0 4px}
+  #printArea h3{font-size:14px;margin:18px 0 6px}
+  #printArea table{font-size:11px}
+  #printArea th,#printArea td{padding:4px}
+  #printArea tr{break-inside:avoid}
+  .badge{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .chart text{font-size:9px}
+  @page{margin:14mm}
+}
+</style>
+</head>
+<body>
+<header>
+  <h1><b>BP</b> Log</h1>
+  <button class="iconbtn" id="btnLockNow" hidden aria-label="Lock app">🔒</button>
+</header>
+
+<main>
+<!-- LOG -->
+<section id="view-log" class="view">
+  <div class="cards">
+    <div class="card" id="latestCard"></div>
+    <div class="card" id="weekCard"></div>
+  </div>
+  <div id="afterSave" class="card" hidden></div>
+  <form id="logForm" class="card" autocomplete="off" novalidate>
+    <h2>New reading</h2>
+    <div class="bp-inputs">
+      <label><span>Systolic</span><input id="fSys" type="number" inputmode="numeric" placeholder="120" enterkeyhint="next"></label>
+      <div class="slash">/</div>
+      <label><span>Diastolic</span><input id="fDia" type="number" inputmode="numeric" placeholder="80" enterkeyhint="next"></label>
+      <label><span>Pulse</span><input id="fPulse" type="number" inputmode="numeric" placeholder="70" enterkeyhint="done"></label>
+    </div>
+    <label class="row"><span>Date &amp; time</span><input id="fTs" type="datetime-local"></label>
+    <div class="seg" data-name="arm"><span>Arm</span><div class="opts"><button type="button" data-v="left" class="on">Left</button><button type="button" data-v="right">Right</button></div></div>
+    <div class="seg" data-name="pos"><span>Position</span><div class="opts"><button type="button" data-v="sitting" class="on">Sitting</button><button type="button" data-v="standing">Standing</button><button type="button" data-v="lying">Lying</button></div></div>
+    <label class="row"><span>Notes (optional)</span><input id="fNotes" type="text" maxlength="300" placeholder="e.g. after coffee, stressed, missed dose"></label>
+    <button class="primary" type="submit">Save reading</button>
+  </form>
+  <button class="secondary" id="btnMed" type="button">💊 Log medication</button>
+</section>
+
+<!-- HISTORY -->
+<section id="view-history" class="view" hidden>
+  <div class="seg" id="hFilter"><div class="opts"><button type="button" data-v="all" class="on">All</button><button type="button" data-v="Morning">Morning</button><button type="button" data-v="Evening">Evening</button><button type="button" data-v="meds">Meds</button></div></div>
+  <div id="historyList"></div>
+</section>
+
+<!-- TRENDS -->
+<section id="view-trends" class="view" hidden>
+  <div class="seg" id="tRange"><div class="opts"><button type="button" data-v="7" class="on">7 days</button><button type="button" data-v="30">30 days</button><button type="button" data-v="90">90 days</button><button type="button" data-v="all">All</button></div></div>
+  <div class="card">
+    <div id="chart"></div>
+    <div class="lg">
+      <span><i style="--c:var(--sys)"></i>Systolic</span><span><i style="--c:var(--dia)"></i>Diastolic</span><span id="lgPulse"><i style="--c:var(--pulse)"></i>Pulse</span>
+      <span><i class="d" style="--c:var(--text)"></i>7-day average</span><span><i class="d" style="--c:var(--s1)"></i>135/85</span><span><i style="--c:var(--accent);width:6px;height:6px;border-radius:50%"></i>Medication</span>
+    </div>
+    <label class="check small"><input type="checkbox" id="tPulse"> Show pulse</label>
+  </div>
+  <div class="card" id="tPeriod"></div>
+  <div class="card" id="tAverages"></div>
+  <div class="card" id="tWeekly"></div>
+</section>
+
+<!-- REPORT -->
+<section id="view-report" class="view" hidden>
+  <div class="card">
+    <h2>GP home monitoring week</h2>
+    <p class="muted small">NICE guidance: for at least 4 days (ideally 7), take two seated readings about a minute apart each morning and each evening. The first day is discarded and the rest are averaged.</p>
+    <label class="row"><span>Start date</span><input type="date" id="rStart"></label>
+    <label class="row"><span>Number of days</span><select id="rDays"><option>4</option><option>5</option><option>6</option><option selected>7</option></select></label>
+    <label class="check"><input type="checkbox" id="rExcl" checked> Discard day 1 (recommended)</label>
+  </div>
+  <div class="card" id="rResult"></div>
+  <div class="card" id="rDaysTable"></div>
+  <div class="btns" style="margin-bottom:12px">
+    <button class="primary" id="btnPrint" type="button">🖨️ Print / save as PDF</button>
+    <button class="secondary" id="btnPrint30" type="button">Print last 30 days instead</button>
+  </div>
+  <p class="muted small" style="padding:0 4px">On Android, choose <b>Save as PDF</b> as the printer, then share the PDF with your GP practice.</p>
+</section>
+
+<!-- SETTINGS -->
+<section id="view-settings" class="view" hidden>
+  <div class="card">
+    <h2>Appearance</h2>
+    <div class="seg" id="sTheme"><div class="opts"><button type="button" data-v="auto">Auto</button><button type="button" data-v="light">Light</button><button type="button" data-v="dark">Dark</button></div></div>
+    <label class="row" style="margin:0"><span>Your name (shown on printed reports)</span><input id="sName" type="text" maxlength="60" placeholder="Optional"></label>
+  </div>
+  <div class="card">
+    <h2>PIN lock</h2>
+    <p id="pinStatus" class="small"></p>
+    <div class="btns"><button class="secondary" id="btnPin" type="button">Set PIN</button><button class="secondary danger" id="btnPinOff" type="button">Remove PIN</button></div>
+    <p class="muted small" style="margin:10px 0 0">The PIN stops someone casually opening the app on your phone. It does not encrypt the data.</p>
+  </div>
+  <div class="card">
+    <h2>Your data</h2>
+    <p id="dataStats" class="small"></p>
+    <div class="btns">
+      <button class="secondary" id="btnCsv" type="button">Export readings (CSV)</button>
+      <button class="secondary" id="btnMedCsv" type="button">Export medication log (CSV)</button>
+      <button class="secondary" id="btnBackup" type="button">Back up everything (JSON)</button>
+      <button class="secondary" id="btnRestore" type="button">Restore from backup</button>
+      <input type="file" id="fileRestore" accept="application/json,.json" hidden>
+    </div>
+    <p class="muted small" style="margin:10px 0 0">Everything is stored only on this phone. If you uninstall the app or clear Chrome's site data, it's gone — so back up now and then, and keep the file somewhere safe.</p>
+    <p id="persistStatus" class="muted small" style="margin:6px 0 0"></p>
+  </div>
+  <div class="card">
+    <h2>Reading categories</h2>
+    <table class="legend-cats small">
+      <tr><td><span class="badge c-low">Low</span></td><td>Below 90/60</td></tr>
+      <tr><td><span class="badge c-normal">Normal</span></td><td>Below 135/85</td></tr>
+      <tr><td><span class="badge c-s1">Stage 1</span></td><td>135/85 to 149/94</td></tr>
+      <tr><td><span class="badge c-s2">Stage 2</span></td><td>150/95 or above</td></tr>
+      <tr><td><span class="badge c-severe">Very high</span></td><td>180/120 or above</td></tr>
+    </table>
+    <p class="muted small" style="margin:10px 0 0">Based on NICE (NG136) thresholds for home readings. The highest of the two numbers sets the category. This app is a log, not medical advice — talk to your GP about your readings.</p>
+  </div>
+  <div class="card">
+    <button class="secondary danger" id="btnWipe" type="button">Delete all data</button>
+  </div>
+  <p class="muted small" style="text-align:center">BP Log · works offline · no data ever leaves this device</p>
+</section>
+</main>
+
+<nav>
+  <button data-view="log" class="active"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>Log</button>
+  <button data-view="history"><svg viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3.5 6h.01M3.5 12h.01M3.5 18h.01"/></svg>History</button>
+  <button data-view="trends"><svg viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8M15 7h6v6"/></svg>Trends</button>
+  <button data-view="report"><svg viewBox="0 0 24 24"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9zM14 3v6h6M8 13h8M8 17h5"/></svg>Report</button>
+  <button data-view="settings"><svg viewBox="0 0 24 24"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg>Settings</button>
+</nav>
+
+<div id="lock" hidden>
+  <img class="lock-logo" src="icon-192.png" alt="">
+  <h2 style="margin:0">Enter PIN</h2>
+  <div class="pdots" id="pdots"><i></i><i></i><i></i><i></i></div>
+  <div class="keypad" id="keypad">
+    <button data-k="1">1</button><button data-k="2">2</button><button data-k="3">3</button>
+    <button data-k="4">4</button><button data-k="5">5</button><button data-k="6">6</button>
+    <button data-k="7">7</button><button data-k="8">8</button><button data-k="9">9</button>
+    <button class="blank" tabindex="-1"></button><button data-k="0">0</button><button data-k="del" aria-label="Delete">⌫</button>
+  </div>
+  <button class="link" id="forgotPin" type="button">Forgot PIN?</button>
+</div>
+
+<dialog id="dlg"></dialog>
+<div id="toast" role="status"></div>
+<section id="printArea"></section>
+
+<script>
+'use strict';
+/* ---------- helpers ---------- */
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const DAY = 864e5;
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const uid = () => (crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2));
+const fmtDay = ts => new Date(ts).toLocaleDateString('en-GB', {weekday:'short', day:'numeric', month:'short', year:'numeric'});
+const fmtDayShort = ts => new Date(ts).toLocaleDateString('en-GB', {weekday:'short', day:'numeric', month:'short'});
+const fmtShort = ts => new Date(ts).toLocaleDateString('en-GB', {day:'numeric', month:'short'});
+const fmtTime = ts => new Date(ts).toLocaleTimeString('en-GB', {hour:'2-digit', minute:'2-digit'});
+const period = ts => new Date(ts).getHours() < 12 ? 'Morning' : 'Evening';
+const toLocalInput = ts => { const d = new Date(ts); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0, 16); };
+const fromLocalInput = v => v ? new Date(v).getTime() : NaN;
+const startOfDay = ts => { const d = new Date(ts); d.setHours(0, 0, 0, 0); return d.getTime(); };
+const addDays = (ts, n) => { const d = new Date(ts); d.setDate(d.getDate() + n); return d.getTime(); };
+function ago(ts) {
+  const m = Math.round((Date.now() - ts) / 60000);
+  if (m < 1) return 'just now';
+  if (m < 60) return m + ' min ago';
+  const h = Math.round(m / 60); if (h < 24) return h + (h === 1 ? ' hour ago' : ' hours ago');
+  const d = Math.round(h / 24); return d + (d === 1 ? ' day ago' : ' days ago');
+}
+let toastTimer;
+function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 2600); }
+
+/* ---------- storage ---------- */
+const S = {
+  get(k, d) { try { const v = localStorage.getItem('bp_' + k); return v === null ? d : JSON.parse(v); } catch { return d; } },
+  set(k, v) { try { localStorage.setItem('bp_' + k, JSON.stringify(v)); } catch {} },
+  del(k) { try { localStorage.removeItem('bp_' + k); } catch {} }
+};
+const DB = {
+  db: null,
+  open() { return new Promise((res, rej) => {
+    const r = indexedDB.open('bp-log', 1);
+    r.onupgradeneeded = () => { const d = r.result;
+      if (!d.objectStoreNames.contains('readings')) d.createObjectStore('readings', {keyPath: 'id'});
+      if (!d.objectStoreNames.contains('meds')) d.createObjectStore('meds', {keyPath: 'id'}); };
+    r.onsuccess = () => { this.db = r.result; res(); };
+    r.onerror = () => rej(r.error);
+  }); },
+  tx(store, mode, fn) { return new Promise((res, rej) => {
+    const t = this.db.transaction(store, mode); const out = fn(t.objectStore(store));
+    t.oncomplete = () => res(out ? out.result : undefined);
+    t.onerror = () => rej(t.error); t.onabort = () => rej(t.error);
+  }); },
+  all(store) { return this.tx(store, 'readonly', s => s.getAll()); },
+  put(store, o) { return this.tx(store, 'readwrite', s => { s.put(o); }); },
+  putMany(store, arr) { return this.tx(store, 'readwrite', s => { arr.forEach(o => s.put(o)); }); },
+  del(store, id) { return this.tx(store, 'readwrite', s => { s.delete(id); }); },
+  clear(store) { return this.tx(store, 'readwrite', s => { s.clear(); }); }
+};
+let readings = [], meds = [];
+async function load() {
+  readings = (await DB.all('readings')).sort((a, b) => a.ts - b.ts);
+  meds = (await DB.all('meds')).sort((a, b) => a.ts - b.ts);
+}
+async function refresh() { await load(); render(); }
+const inRange = (from, to = Infinity) => readings.filter(r => r.ts >= from && r.ts < to);
+
+/* ---------- classification & maths ---------- */
+const CATS = {
+  low: {label: 'Low', cls: 'c-low'}, normal: {label: 'Normal', cls: 'c-normal'},
+  s1: {label: 'Stage 1', cls: 'c-s1'}, s2: {label: 'Stage 2', cls: 'c-s2'}, severe: {label: 'Very high', cls: 'c-severe'}
+};
+function classify(s, d) {
+  if (s >= 180 || d >= 120) return 'severe';
+  if (s >= 150 || d >= 95) return 's2';
+  if (s >= 135 || d >= 85) return 's1';
+  if (s < 90 || d < 60) return 'low';
+  return 'normal';
+}
+const badge = (s, d) => { const c = CATS[classify(s, d)]; return `<span class="badge ${c.cls}">${c.label}</span>`; };
+const dotCls = (s, d) => CATS[classify(s, d)].cls;
+function avg(list) {
+  if (!list.length) return null;
+  const n = list.length, p = list.filter(r => r.pulse);
+  return {
+    sys: Math.round(list.reduce((a, r) => a + r.sys, 0) / n),
+    dia: Math.round(list.reduce((a, r) => a + r.dia, 0) / n),
+    pulse: p.length ? Math.round(p.reduce((a, r) => a + r.pulse, 0) / p.length) : null, n
+  };
+}
+const fmtAvg = a => a ? `${a.sys}/${a.dia}` : '–';
+
+/* ---------- segmented controls ---------- */
+function wireSegs(root) {
+  $$('.seg', root).forEach(s => s.addEventListener('click', e => {
+    const b = e.target.closest('button[data-v]'); if (!b) return;
+    setSeg(s, b.dataset.v);
+    s.dispatchEvent(new CustomEvent('segchange', {detail: b.dataset.v}));
+  }));
+}
+const segVal = s => $('button.on', s)?.dataset.v;
+const setSeg = (s, v) => $$('button[data-v]', s).forEach(x => x.classList.toggle('on', x.dataset.v === v));
+const segHTML = (name, opts, val, label) => `<div class="seg" data-name="${name}">${label ? `<span>${label}</span>` : ''}<div class="opts">${opts.map(([v, l]) => `<button type="button" data-v="${v}" class="${v === val ? 'on' : ''}">${l}</button>`).join('')}</div></div>`;
+const ARMS = [['left', 'Left'], ['right', 'Right']];
+const POSITIONS = [['sitting', 'Sitting'], ['standing', 'Standing'], ['lying', 'Lying']];
+const cap = s => s ? s[0].toUpperCase() + s.slice(1) : '';
+
+/* ---------- dialogs ---------- */
+const dlg = $('#dlg');
+function openDlg(html, handlers = {}) {
+  dlg.onclose = null;
+  dlg.innerHTML = `<div class="dbody">${html}</div>`;
+  dlg.onclick = e => {
+    if (e.target === dlg) { dlg.close(); return; }
+    const b = e.target.closest('[data-act]'); if (!b) return;
+    e.preventDefault();
+    const h = handlers[b.dataset.act]; h ? h() : dlg.close();
+  };
+  wireSegs(dlg);
+  if (!dlg.open) dlg.showModal();
+}
+const dErr = msg => { const e = $('#dErr', dlg); if (e) e.textContent = msg; };
+function ask(title, msg, buttons) {
+  return new Promise(res => {
+    const handlers = {};
+    buttons.forEach((b, i) => handlers['b' + i] = () => { dlg.close(); res(b.value); });
+    openDlg(`<h2>${title}</h2>${msg ? `<p>${msg}</p>` : ''}<div class="btns">${buttons.map((b, i) => `<button type="button" class="${b.cls || 'secondary'}" data-act="b${i}">${b.label}</button>`).join('')}</div>`, handlers);
+    dlg.onclose = () => res(null);
+  });
+}
+
+/* ---------- validation ---------- */
+function validate(s, d, p) {
+  if (!s || !d) return 'Enter both the top (systolic) and bottom (diastolic) numbers.';
+  if (s < 50 || s > 300 || d < 30 || d > 200) return 'Those numbers look out of range — please check them.';
+  if (d >= s) return 'Diastolic should be lower than systolic — check they aren\'t swapped.';
+  if (p !== null && (p < 25 || p > 250)) return 'The pulse looks out of range — please check it.';
+  return null;
+}
+const unusual = (s, d, p) => s < 80 || s > 220 || d < 45 || d > 130 || (p !== null && (p < 40 || p > 150));
+
+/* ---------- LOG view ---------- */
+let tsTouched = false;
+function resetForm() {
+  ['#fSys', '#fDia', '#fPulse', '#fNotes'].forEach(id => $(id).value = '');
+  $('#fTs').value = toLocalInput(Date.now()); tsTouched = false;
+  setSeg($('#logForm .seg[data-name=arm]'), S.get('lastArm', 'left'));
+  setSeg($('#logForm .seg[data-name=pos]'), S.get('lastPos', 'sitting'));
+}
+function renderLog() {
+  if (!tsTouched && !$('#fSys').value) $('#fTs').value = toLocalInput(Date.now());
+  const last = readings[readings.length - 1];
+  $('#latestCard').innerHTML = last
+    ? `<div class="label">Latest</div><div class="bignum">${last.sys}/${last.dia}</div>
+       <div class="small muted">${last.pulse ? '♥ ' + last.pulse + ' bpm · ' : ''}${ago(last.ts)}</div><div style="margin-top:6px">${badge(last.sys, last.dia)}</div>`
+    : `<div class="label">Latest</div><div class="bignum">–</div><div class="small muted">No readings yet</div>`;
+  const now = Date.now(), a7 = avg(inRange(now - 7 * DAY)), prev = avg(inRange(now - 14 * DAY, now - 7 * DAY));
+  let trend = '';
+  if (a7 && prev) {
+    const ds = a7.sys - prev.sys, dd = a7.dia - prev.dia;
+    const arrow = ds >= 3 ? '▲' : ds <= -3 ? '▼' : '►';
+    const word = ds >= 3 ? 'Up' : ds <= -3 ? 'Down' : 'Steady';
+    trend = `<div class="trend muted">${arrow} ${word} vs last week (${ds > 0 ? '+' : ''}${ds}/${dd > 0 ? '+' : ''}${dd})</div>`;
+  }
+  $('#weekCard').innerHTML = a7
+    ? `<div class="label">7-day average</div><div class="bignum">${a7.sys}/${a7.dia}</div>
+       <div class="small muted">${a7.pulse ? '♥ ' + a7.pulse + ' bpm · ' : ''}${a7.n} reading${a7.n === 1 ? '' : 's'}</div><div style="margin-top:6px">${badge(a7.sys, a7.dia)}</div>${trend}`
+    : `<div class="label">7-day average</div><div class="bignum">–</div><div class="small muted">No readings in the last 7 days</div>`;
+}
+let timerInt;
+function showAfterSave(r) {
+  const box = $('#afterSave'), k = classify(r.sys, r.dia);
+  clearInterval(timerInt);
+  box.className = 'card ' + (k === 'severe' ? 'warn' : 'ok');
+  if (k === 'severe') {
+    box.innerHTML = `<h2>⚠️ This reading is very high (${r.sys}/${r.dia})</h2>
+      <p>Sit quietly for 5 minutes and measure again.</p>
+      <p>If it's still 180/120 or above, contact your GP urgently or call <b>NHS 111</b>.</p>
+      <p><b>Call 999</b> if you also have chest pain, a severe headache, breathlessness, confusion, weakness or problems with your vision or speech.</p>
+      <button class="secondary" type="button" id="asClose">OK</button>`;
+  } else {
+    box.innerHTML = `<p style="margin:0 0 8px"><b>Saved ✓</b> ${r.sys}/${r.dia} ${badge(r.sys, r.dia)}${k === 'low' ? '<br><span class="small muted">If you feel dizzy or faint, mention it to your GP.</span>' : ''}</p>
+      <p class="small muted">NICE suggests a second reading about a minute later.</p>
+      <div class="btns"><button class="primary" type="button" id="asTimer">⏱ Start 1-minute timer</button><button class="secondary" type="button" id="asClose">Done</button></div>`;
+    $('#asTimer').onclick = e => {
+      const b = e.currentTarget; let left = 60; b.disabled = true;
+      const tick = () => { b.textContent = `⏱ ${left}s — sit still and relax`; };
+      tick();
+      timerInt = setInterval(() => {
+        left--; if (left > 0) return tick();
+        clearInterval(timerInt); b.disabled = false; b.textContent = '✓ Time for your second reading';
+        try { navigator.vibrate && navigator.vibrate([250, 120, 250]); } catch {}
+        b.onclick = () => { box.hidden = true; $('#fSys').focus(); };
+      }, 1000);
+    };
+  }
+  $('#asClose').onclick = () => { clearInterval(timerInt); box.hidden = true; };
+  box.hidden = false;
+  box.scrollIntoView({behavior: 'smooth', block: 'start'});
+}
+async function saveReading(e) {
+  e.preventDefault();
+  const sys = +$('#fSys').value, dia = +$('#fDia').value, pulse = $('#fPulse').value ? +$('#fPulse').value : null;
+  const err = validate(sys, dia, pulse); if (err) { toast(err); return; }
+  if (unusual(sys, dia, pulse)) {
+    const ok = await ask('Unusual reading', `${sys}/${dia}${pulse ? ', pulse ' + pulse : ''} is outside the usual range. Is that correct?`,
+      [{label: 'Yes, save it', value: true, cls: 'primary'}, {label: 'Let me check', value: false}]);
+    if (!ok) return;
+  }
+  const r = {
+    id: uid(), ts: fromLocalInput($('#fTs').value) || Date.now(), sys, dia, pulse,
+    arm: segVal($('#logForm .seg[data-name=arm]')) || 'left', pos: segVal($('#logForm .seg[data-name=pos]')) || 'sitting',
+    notes: $('#fNotes').value.trim()
+  };
+  await DB.put('readings', r);
+  S.set('lastArm', r.arm); S.set('lastPos', r.pos);
+  requestPersist();
+  await load(); resetForm(); renderLog(); showAfterSave(r);
+  document.activeElement?.blur();
+}
+
+/* ---------- edit dialogs ---------- */
+function editReading(id) {
+  const r = readings.find(x => x.id === id); if (!r) return;
+  openDlg(`<h2>Edit reading</h2>
+    <div class="bp-inputs">
+      <label><span>Systolic</span><input id="eSys" type="number" inputmode="numeric" value="${r.sys}"></label><div class="slash">/</div>
+      <label><span>Diastolic</span><input id="eDia" type="number" inputmode="numeric" value="${r.dia}"></label>
+      <label><span>Pulse</span><input id="ePulse" type="number" inputmode="numeric" value="${r.pulse ?? ''}"></label>
+    </div>
+    <label class="row"><span>Date &amp; time</span><input id="eTs" type="datetime-local" value="${toLocalInput(r.ts)}"></label>
+    ${segHTML('arm', ARMS, r.arm, 'Arm')}${segHTML('pos', POSITIONS, r.pos, 'Position')}
+    <label class="row"><span>Notes</span><input id="eNotes" type="text" maxlength="300" value="${esc(r.notes)}"></label>
+    <p class="err" id="dErr"></p>
+    <div class="btns"><button type="button" class="primary" data-act="save">Save changes</button><button type="button" class="secondary danger" data-act="del">Delete reading</button><button type="button" class="secondary" data-act="cancel">Cancel</button></div>`, {
+    save: async () => {
+      const sys = +$('#eSys').value, dia = +$('#eDia').value, pulse = $('#ePulse').value ? +$('#ePulse').value : null;
+      const err = validate(sys, dia, pulse); if (err) return dErr(err);
+      Object.assign(r, {sys, dia, pulse, ts: fromLocalInput($('#eTs').value) || r.ts,
+        arm: segVal($('.seg[data-name=arm]', dlg)), pos: segVal($('.seg[data-name=pos]', dlg)), notes: $('#eNotes').value.trim()});
+      await DB.put('readings', r); dlg.close(); await refresh(); toast('Reading updated');
+    },
+    del: async () => {
+      const ok = await ask('Delete this reading?', `${r.sys}/${r.dia} on ${fmtDay(r.ts)} at ${fmtTime(r.ts)}. This can't be undone.`,
+        [{label: 'Delete', value: true, cls: 'primary danger'}, {label: 'Cancel', value: false}]);
+      if (ok) { await DB.del('readings', r.id); await refresh(); toast('Reading deleted'); }
+    }
+  });
+}
+function medDialog(id) {
+  const m = id ? meds.find(x => x.id === id) : null;
+  const names = [...new Set(meds.map(x => x.name))];
+  openDlg(`<h2>${m ? 'Edit medication' : 'Log medication'}</h2>
+    <label class="row"><span>Medication</span><input id="mName" list="medNames" maxlength="80" value="${esc(m?.name)}" placeholder="e.g. Amlodipine"></label>
+    <datalist id="medNames">${names.map(n => `<option value="${esc(n)}">`).join('')}</datalist>
+    <label class="row"><span>Dose</span><input id="mDose" maxlength="40" value="${esc(m?.dose)}" placeholder="e.g. 5mg"></label>
+    <label class="row"><span>Date &amp; time taken</span><input id="mTs" type="datetime-local" value="${toLocalInput(m?.ts ?? Date.now())}"></label>
+    <p class="err" id="dErr"></p>
+    <div class="btns"><button type="button" class="primary" data-act="save">Save</button>${m ? '<button type="button" class="secondary danger" data-act="del">Delete</button>' : ''}<button type="button" class="secondary" data-act="cancel">Cancel</button></div>`, {
+    save: async () => {
+      const name = $('#mName').value.trim(); if (!name) return dErr('Enter the medication name.');
+      const rec = {id: m?.id || uid(), name, dose: $('#mDose').value.trim(), ts: fromLocalInput($('#mTs').value) || Date.now()};
+      await DB.put('meds', rec); dlg.close(); await refresh(); toast('Medication saved');
+    },
+    del: async () => {
+      const ok = await ask('Delete this entry?', `${esc(m.name)} on ${fmtDay(m.ts)}.`, [{label: 'Delete', value: true, cls: 'primary danger'}, {label: 'Cancel', value: false}]);
+      if (ok) { await DB.del('meds', m.id); await refresh(); toast('Entry deleted'); }
+    }
+  });
+  $('#mName').addEventListener('change', () => {
+    const last = [...meds].reverse().find(x => x.name.toLowerCase() === $('#mName').value.trim().toLowerCase());
+    if (last && !$('#mDose').value) $('#mDose').value = last.dose;
+  });
+}
+
+/* ---------- HISTORY view ---------- */
+function renderHistory() {
+  const f = segVal($('#hFilter')) || 'all';
+  let items = [];
+  if (f !== 'meds') items = readings.filter(r => f === 'all' || period(r.ts) === f).map(r => ({...r, type: 'r'}));
+  if (f === 'all' || f === 'meds') items = items.concat(meds.map(m => ({...m, type: 'm'})));
+  items.sort((a, b) => b.ts - a.ts);
+  if (!items.length) { $('#historyList').innerHTML = `<div class="card muted" style="text-align:center">Nothing logged yet.</div>`; return; }
+  const groups = new Map();
+  items.forEach(it => { const k = startOfDay(it.ts); if (!groups.has(k)) groups.set(k, []); groups.get(k).push(it); });
+  let html = '';
+  for (const [day, list] of groups) {
+    const a = avg(list.filter(x => x.type === 'r'));
+    html += `<div class="day-h"><span>${fmtDay(day)}</span><span>${a && a.n > 1 ? 'avg ' + fmtAvg(a) : ''}</span></div><div class="group">`;
+    html += list.map(it => it.type === 'r'
+      ? `<button class="item" data-r="${it.id}"><span class="dot ${dotCls(it.sys, it.dia)}"></span><span class="t">${fmtTime(it.ts)}</span>
+         <span class="grow"><span class="v">${it.sys}/${it.dia}</span>${it.pulse ? ` <span class="small muted">♥ ${it.pulse}</span>` : ''}
+         <div class="m">${period(it.ts)} · ${cap(it.arm)} arm · ${cap(it.pos)}${it.notes ? ' · ' + esc(it.notes) : ''}</div></span></button>`
+      : `<button class="item" data-m="${it.id}"><span class="pill">💊</span><span class="t">${fmtTime(it.ts)}</span>
+         <span class="grow"><b>${esc(it.name)}</b>${it.dose ? ` <span class="small muted">${esc(it.dose)}</span>` : ''}</span></button>`).join('');
+    html += '</div>';
+  }
+  $('#historyList').innerHTML = html;
+}
+
+/* ---------- chart ---------- */
+function chartSVG(list, medList, o = {}) {
+  if (!list.length) return '<p class="muted small" style="padding:40px 0;text-align:center;margin:0">No readings in this period yet.</p>';
+  const W = o.w || 360, H = o.h || 220, L = 30, R = 10, T = 10, B = 22;
+  let t0 = o.from ?? list[0].ts, t1 = o.to ?? list[list.length - 1].ts;
+  if (t1 - t0 < DAY) { const mid = (t0 + t1) / 2; t0 = mid - DAY / 2; t1 = mid + DAY / 2; }
+  const vals = [];
+  list.forEach(r => { vals.push(r.sys, r.dia); if (o.pulse && r.pulse) vals.push(r.pulse); });
+  const y0 = Math.min(60, Math.floor((Math.min(...vals) - 5) / 20) * 20);
+  const y1 = Math.max(160, Math.ceil((Math.max(...vals) + 5) / 20) * 20);
+  const X = t => +(L + (t - t0) / (t1 - t0) * (W - L - R)).toFixed(1);
+  const Y = v => +(T + (y1 - v) / (y1 - y0) * (H - T - B)).toFixed(1);
+  let s = '';
+  for (let v = y0; v <= y1; v += 20) s += `<line class="grid" x1="${L}" x2="${W - R}" y1="${Y(v)}" y2="${Y(v)}"/><text x="${L - 5}" y="${Y(v) + 3}" text-anchor="end">${v}</text>`;
+  [135, 85].forEach(v => { if (v > y0 && v < y1) s += `<line class="thr" x1="${L}" x2="${W - R}" y1="${Y(v)}" y2="${Y(v)}"/>`; });
+  const nt = W < 420 ? 3 : 6;
+  for (let i = 0; i <= nt; i++) { const t = t0 + (t1 - t0) * i / nt; s += `<text x="${X(t)}" y="${H - 6}" text-anchor="${i === 0 ? 'start' : i === nt ? 'end' : 'middle'}">${fmtShort(t)}</text>`; }
+  (medList || []).filter(m => m.ts >= t0 && m.ts <= t1).forEach(m => {
+    s += `<g><title>${esc(m.name)} ${esc(m.dose)} – ${fmtDayShort(m.ts)} ${fmtTime(m.ts)}</title><line class="medl" x1="${X(m.ts)}" x2="${X(m.ts)}" y1="${T}" y2="${H - B}"/><circle class="medm" cx="${X(m.ts)}" cy="${H - B - 4}" r="3.5"/></g>`;
+  });
+  const path = pts => pts.length ? 'M' + pts.map(p => p.join(',')).join('L') : '';
+  const src = o.roll || list;
+  const rolled = list.map(r => { const w = src.filter(x => x.ts > r.ts - 7 * DAY && x.ts <= r.ts); const a = avg(w.length ? w : [r]); return {ts: r.ts, sys: a.sys, dia: a.dia}; });
+  ['sys', 'dia'].forEach(k => { s += `<path class="ln avg s-${k}" d="${path(rolled.map(r => [X(r.ts), Y(r[k])]))}"/>`; });
+  const keys = o.pulse ? ['pulse', 'dia', 'sys'] : ['dia', 'sys'];
+  keys.forEach(k => {
+    const pts = list.filter(r => r[k]).map(r => [X(r.ts), Y(r[k])]);
+    s += `<path class="ln s-${k}" d="${path(pts)}"/>`;
+    if (list.length <= 150) s += pts.map(p => `<circle class="f-${k}" cx="${p[0]}" cy="${p[1]}" r="${k === 'pulse' ? 2 : 2.8}"/>`).join('');
+  });
+  return `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Blood pressure trend chart">${s}</svg>`;
+}
+
+/* ---------- TRENDS view ---------- */
+function rangeBounds() {
+  const r = segVal($('#tRange')) || '7', now = Date.now();
+  if (r === 'all') return {from: readings[0]?.ts ?? now, to: now, label: 'all time'};
+  return {from: now - (+r) * DAY, to: now, label: `last ${r} days`};
+}
+function renderTrends() {
+  const {from, to, label} = rangeBounds();
+  const list = inRange(from, to + 1), showPulse = $('#tPulse').checked;
+  $('#lgPulse').hidden = !showPulse;
+  const w = Math.max(300, Math.round($('#chart').clientWidth || 340));
+  $('#chart').innerHTML = chartSVG(list, meds, {from, to, pulse: showPulse, roll: readings, w, h: Math.round(w * 0.62)});
+  // period stats
+  const a = avg(list), am = avg(list.filter(r => period(r.ts) === 'Morning')), pm = avg(list.filter(r => period(r.ts) === 'Evening'));
+  if (a) {
+    const hi = list.reduce((m, r) => r.sys > m.sys ? r : m), lo = list.reduce((m, r) => r.sys < m.sys ? r : m);
+    const under = Math.round(list.filter(r => r.sys < 135 && r.dia < 85).length / list.length * 100);
+    $('#tPeriod').innerHTML = `<h2>Summary · ${label}</h2><table>
+      <tr><td>Average</td><td><b>${fmtAvg(a)}</b></td><td>${badge(a.sys, a.dia)}</td></tr>
+      <tr><td>Morning average</td><td>${fmtAvg(am)}</td><td class="muted small">${am ? am.n + ' readings' : ''}</td></tr>
+      <tr><td>Evening average</td><td>${fmtAvg(pm)}</td><td class="muted small">${pm ? pm.n + ' readings' : ''}</td></tr>
+      <tr><td>Average pulse</td><td>${a.pulse ?? '–'}</td><td class="muted small">bpm</td></tr>
+      <tr><td>Highest</td><td>${hi.sys}/${hi.dia}</td><td class="muted small">${fmtShort(hi.ts)} ${fmtTime(hi.ts)}</td></tr>
+      <tr><td>Lowest</td><td>${lo.sys}/${lo.dia}</td><td class="muted small">${fmtShort(lo.ts)} ${fmtTime(lo.ts)}</td></tr>
+      <tr><td>Below 135/85</td><td>${under}%</td><td class="muted small">of ${a.n} readings</td></tr></table>`;
+  } else $('#tPeriod').innerHTML = `<h2>Summary · ${label}</h2><p class="muted" style="margin:0">No readings in this period.</p>`;
+  // rolling averages
+  const now = Date.now();
+  const rows = [['Last 7 days', now - 7 * DAY], ['Last 30 days', now - 30 * DAY], ['Last 90 days', now - 90 * DAY], ['All time', -Infinity]]
+    .map(([l, f]) => { const x = avg(inRange(f)); return `<tr><td>${l}</td><td><b>${fmtAvg(x)}</b></td><td>${x?.pulse ?? '–'}</td><td>${x ? x.n : 0}</td><td>${x ? badge(x.sys, x.dia) : ''}</td></tr>`; }).join('');
+  $('#tAverages').innerHTML = `<h2>Averages</h2><table><tr><th></th><th>BP</th><th>Pulse</th><th>n</th><th></th></tr>${rows}</table>`;
+  // weekly history
+  const today = startOfDay(now); let wrows = '', prevA = null; const weeks = [];
+  for (let i = 11; i >= 0; i--) { const end = addDays(today, 1 - 7 * i), start = addDays(end, -7); weeks.push({start, end, a: avg(inRange(start, end))}); }
+  weeks.forEach(wk => {
+    if (wk.a) {
+      const ch = prevA ? wk.a.sys - prevA.sys : null;
+      wk.row = `<tr><td>${fmtShort(wk.start)} – ${fmtShort(wk.end - 1)}</td><td><b>${fmtAvg(wk.a)}</b></td><td>${wk.a.n}</td><td>${ch === null ? '' : ch >= 3 ? '▲ +' + ch : ch <= -3 ? '▼ ' + ch : '► ' + (ch > 0 ? '+' : '') + ch}</td><td>${badge(wk.a.sys, wk.a.dia)}</td></tr>`;
+      prevA = wk.a;
+    }
+  });
+  wrows = weeks.filter(w => w.row).reverse().map(w => w.row).join('');
+  $('#tWeekly').innerHTML = `<h2>Weekly averages</h2>${wrows ? `<table><tr><th>Week</th><th>BP</th><th>n</th><th>Change</th><th></th></tr>${wrows}</table><p class="muted small" style="margin:8px 0 0">Change is systolic vs the previous week with readings. Last 12 weeks shown.</p>` : '<p class="muted" style="margin:0">No readings yet.</p>'}`;
+}
+
+/* ---------- REPORT view ---------- */
+function reportBounds() {
+  const st = $('#rStart').value; const start = new Date(st + 'T00:00').getTime();
+  const days = +$('#rDays').value, excl = $('#rExcl').checked;
+  return {start, days, excl, incFrom: excl ? addDays(start, 1) : start, end: addDays(start, days)};
+}
+function renderReport() {
+  if (!$('#rStart').value) $('#rStart').value = S.get('rStart') || toLocalInput(addDays(startOfDay(Date.now()), -6)).slice(0, 10);
+  $('#rDays').value = String(S.get('rDays', 7)); $('#rExcl').checked = S.get('rExcl', true);
+  const {start, days, excl, incFrom, end} = reportBounds();
+  let rows = '';
+  for (let i = 0; i < days; i++) {
+    const d0 = addDays(start, i), list = inRange(d0, addDays(start, i + 1));
+    const m = list.filter(r => period(r.ts) === 'Morning').length, e = list.length - m;
+    const off = excl && i === 0;
+    rows += `<tr${off ? ' class="muted"' : ''}><td>${i + 1}</td><td>${fmtDayShort(d0)}${off ? ' <span class="small">(discarded)</span>' : ''}</td>
+      <td class="${m >= 2 ? 'good' : ''}">${m >= 2 ? '✓ ' : ''}${m}/2</td><td class="${e >= 2 ? 'good' : ''}">${e >= 2 ? '✓ ' : ''}${e}/2</td></tr>`;
+  }
+  $('#rDaysTable').innerHTML = `<h2>Daily checklist</h2><table><tr><th>Day</th><th>Date</th><th>Morning</th><th>Evening</th></tr>${rows}</table>`;
+  const used = inRange(incFrom, end), a = avg(used), target = (days - (excl ? 1 : 0)) * 4;
+  const now = Date.now();
+  const status = now < start ? 'Not started yet' : now < end ? `In progress — day ${Math.floor((startOfDay(now) - start) / DAY) + 1} of ${days}` : 'Complete';
+  $('#rResult').innerHTML = a
+    ? `<div class="label">Home average · ${status}</div><div class="bignum">${a.sys}/${a.dia} <small>${a.pulse ? '♥ ' + a.pulse : ''}</small></div>
+       <div>${badge(a.sys, a.dia)} <span class="small muted">${a.n} of ${target} target readings</span></div>
+       <p class="small muted" style="margin:10px 0 0">For home readings, NICE treats an average of 135/85 or above as raised. Your GP will look at this alongside other things before deciding anything.</p>`
+    : `<div class="label">Home average · ${status}</div><p class="muted" style="margin:6px 0 0">No readings in the averaged days yet. Aim for ${target} readings in total.</p>`;
+}
+function buildPrint({title, from, to, exclTo, subtitle}) {
+  const all = inRange(from, to), used = inRange(exclTo ?? from, to), a = avg(used);
+  const ms = meds.filter(m => m.ts >= from && m.ts < to);
+  const am = avg(used.filter(r => period(r.ts) === 'Morning')), pm = avg(used.filter(r => period(r.ts) === 'Evening'));
+  const name = S.get('name', '');
+  let h = `<h1>${title}</h1><p>${name ? '<b>' + esc(name) + '</b> · ' : ''}${fmtDay(from)} to ${fmtDay(to - 1)}<br><span class="muted">${subtitle || ''} Generated ${fmtDay(Date.now())} ${fmtTime(Date.now())}. Home blood pressure monitor readings.</span></p>`;
+  if (a) {
+    const hi = used.reduce((m, r) => r.sys > m.sys ? r : m), lo = used.reduce((m, r) => r.sys < m.sys ? r : m);
+    h += `<h3>Summary</h3><table><tr><th>Average (${a.n} readings)</th><th>Morning avg</th><th>Evening avg</th><th>Avg pulse</th><th>Highest</th><th>Lowest</th></tr>
+      <tr><td><b style="font-size:15px">${fmtAvg(a)}</b> ${badge(a.sys, a.dia)}</td><td>${fmtAvg(am)}${am ? ' (' + am.n + ')' : ''}</td><td>${fmtAvg(pm)}${pm ? ' (' + pm.n + ')' : ''}</td><td>${a.pulse ?? '–'}</td><td>${hi.sys}/${hi.dia}</td><td>${lo.sys}/${lo.dia}</td></tr></table>`;
+  } else h += '<p>No readings in the averaged period.</p>';
+  h += `<h3>Trend</h3>${chartSVG(all, ms, {from, to: Math.min(to, Date.now()), pulse: true, roll: readings, w: 680, h: 240})}
+    <p class="muted" style="font-size:10px">Red = systolic, blue = diastolic, grey = pulse, dashed = 7-day rolling average, dotted line = 135/85.</p>`;
+  if (all.length) {
+    h += `<h3>Readings</h3><table><tr><th>Date</th><th>Time</th><th></th><th>Systolic</th><th>Diastolic</th><th>Pulse</th><th>Arm</th><th>Position</th><th>Notes</th></tr>` +
+      all.map(r => { const off = exclTo && r.ts < exclTo; return `<tr${off ? ' style="color:#888"' : ''}><td>${fmtDayShort(r.ts)}</td><td>${fmtTime(r.ts)}</td><td>${period(r.ts)}${off ? ' (day 1, not averaged)' : ''}</td><td>${r.sys}</td><td>${r.dia}</td><td>${r.pulse ?? ''}</td><td>${cap(r.arm)}</td><td>${cap(r.pos)}</td><td>${esc(r.notes)}</td></tr>`; }).join('') + '</table>';
+  }
+  if (ms.length) h += `<h3>Medication taken</h3><table><tr><th>Date</th><th>Time</th><th>Medication</th><th>Dose</th></tr>` + ms.map(m => `<tr><td>${fmtDayShort(m.ts)}</td><td>${fmtTime(m.ts)}</td><td>${esc(m.name)}</td><td>${esc(m.dose)}</td></tr>`).join('') + '</table>';
+  $('#printArea').innerHTML = h;
+  setTimeout(() => window.print(), 50);
+}
+
+/* ---------- SETTINGS view ---------- */
+async function renderSettings() {
+  setSeg($('#sTheme'), S.get('theme', 'auto'));
+  $('#sName').value = S.get('name', '');
+  const hasPin = !!S.get('pin');
+  $('#pinStatus').textContent = hasPin ? 'A PIN is set. The app locks when opened and after a minute in the background.' : 'No PIN set.';
+  $('#btnPin').textContent = hasPin ? 'Change PIN' : 'Set PIN';
+  $('#btnPinOff').hidden = !hasPin;
+  $('#dataStats').innerHTML = `<b>${readings.length}</b> readings and <b>${meds.length}</b> medication entries stored on this phone.${readings.length ? `<br><span class="muted">First: ${fmtDay(readings[0].ts)}</span>` : ''}`;
+  try {
+    const p = navigator.storage?.persisted ? await navigator.storage.persisted() : null;
+    $('#persistStatus').textContent = p === true ? '✓ Storage is marked as persistent, so Android won\'t clear it to free space.' : p === false ? 'Tip: install the app to your home screen so Android keeps the data safe.' : '';
+  } catch {}
+}
+function applyTheme() { document.documentElement.dataset.theme = S.get('theme', 'auto'); }
+async function requestPersist() { try { if (navigator.storage?.persist && !(await navigator.storage.persisted())) await navigator.storage.persist(); } catch {} }
+
+function download(name, text, type) {
+  const blob = new Blob([text], {type}), url = URL.createObjectURL(blob), a = document.createElement('a');
+  a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 10000);
+}
+const stamp = () => toLocalInput(Date.now()).slice(0, 10);
+const csvCell = v => { v = v == null ? '' : String(v); if (/^[=+\-@]/.test(v)) v = "'" + v; return /[",\n\r]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
+const csv = rows => '﻿' + rows.map(r => r.map(csvCell).join(',')).join('\r\n');
+function exportCsv() {
+  if (!readings.length) return toast('No readings to export yet');
+  download(`bp-readings-${stamp()}.csv`, csv([['Date', 'Time', 'Period', 'Systolic', 'Diastolic', 'Pulse', 'Arm', 'Position', 'Category', 'Notes'],
+    ...readings.map(r => { const l = toLocalInput(r.ts); return [l.slice(0, 10), l.slice(11, 16), period(r.ts), r.sys, r.dia, r.pulse ?? '', cap(r.arm), cap(r.pos), CATS[classify(r.sys, r.dia)].label, r.notes]; })]), 'text/csv');
+}
+function exportMedCsv() {
+  if (!meds.length) return toast('No medication entries yet');
+  download(`bp-medication-${stamp()}.csv`, csv([['Date', 'Time', 'Medication', 'Dose'], ...meds.map(m => { const l = toLocalInput(m.ts); return [l.slice(0, 10), l.slice(11, 16), m.name, m.dose]; })]), 'text/csv');
+}
+function backup() {
+  download(`bp-log-backup-${stamp()}.json`, JSON.stringify({app: 'bp-log', version: 1, exported: new Date().toISOString(), readings, meds}, null, 1), 'application/json');
+  S.set('lastBackup', Date.now());
+}
+function cleanR(r) {
+  const sys = +r?.sys, dia = +r?.dia, ts = +r?.ts;
+  if (!sys || !dia || !ts) return null;
+  return {id: String(r.id || uid()), ts, sys, dia, pulse: +r.pulse || null,
+    arm: r.arm === 'right' ? 'right' : 'left', pos: ['sitting', 'standing', 'lying'].includes(r.pos) ? r.pos : 'sitting', notes: String(r.notes || '').slice(0, 300)};
+}
+function cleanM(m) {
+  const ts = +m?.ts; if (!ts || !m.name) return null;
+  return {id: String(m.id || uid()), ts, name: String(m.name).slice(0, 80), dose: String(m.dose || '').slice(0, 40)};
+}
+async function restore(file) {
+  let data;
+  try { data = JSON.parse(await file.text()); } catch { return toast('That file isn\'t a valid backup'); }
+  if (!data || !Array.isArray(data.readings)) return toast('That file isn\'t a BP Log backup');
+  const rs = data.readings.map(cleanR).filter(Boolean), ms = (Array.isArray(data.meds) ? data.meds : []).map(cleanM).filter(Boolean);
+  const mode = await ask('Restore backup', `This backup has <b>${rs.length}</b> readings and <b>${ms.length}</b> medication entries.<br><br><b>Merge</b> adds them to what's on this phone (duplicates are skipped). <b>Replace</b> deletes what's here first.`,
+    [{label: 'Merge', value: 'merge', cls: 'primary'}, {label: 'Replace everything', value: 'replace', cls: 'secondary danger'}, {label: 'Cancel', value: null}]);
+  if (!mode) return;
+  if (mode === 'replace') { await DB.clear('readings'); await DB.clear('meds'); }
+  await DB.putMany('readings', rs); await DB.putMany('meds', ms);
+  await refresh(); toast('Backup restored');
+}
+
+/* ---------- PIN lock ---------- */
+async function hash(pin) {
+  const data = new TextEncoder().encode('bplog-v1:' + pin);
+  if (crypto.subtle) { const b = await crypto.subtle.digest('SHA-256', data); return [...new Uint8Array(b)].map(x => x.toString(16).padStart(2, '0')).join(''); }
+  let h = 5381; for (const c of data) h = ((h * 33) ^ c) >>> 0; return 'x' + h;
+}
+let entered = '', hiddenAt = 0;
+const lockEl = $('#lock');
+function lock() { if (!S.get('pin')) return; if (dlg.open) dlg.close(); entered = ''; dots(); lockEl.hidden = false; }
+function dots() { $$('#pdots i').forEach((d, i) => d.classList.toggle('f', i < entered.length)); }
+async function keyIn(k) {
+  if (lockEl.hidden) return;
+  if (k === 'del') entered = entered.slice(0, -1); else if (entered.length < 4) entered += k;
+  dots();
+  if (entered.length === 4) {
+    const ok = (await hash(entered)) === S.get('pin');
+    if (ok) { lockEl.hidden = true; entered = ''; dots(); render(); }
+    else { const p = $('#pdots'); p.classList.remove('shake'); void p.offsetWidth; p.classList.add('shake'); try { navigator.vibrate?.(150); } catch {} setTimeout(() => { entered = ''; dots(); }, 350); }
+  }
+}
+function pinDialog() {
+  openDlg(`<h2>${S.get('pin') ? 'Change' : 'Set'} PIN</h2>
+    <label class="row"><span>New 4-digit PIN</span><input id="p1" type="password" inputmode="numeric" maxlength="4" autocomplete="off"></label>
+    <label class="row"><span>Confirm PIN</span><input id="p2" type="password" inputmode="numeric" maxlength="4" autocomplete="off"></label>
+    <p class="err" id="dErr"></p>
+    <div class="btns"><button type="button" class="primary" data-act="save">Save PIN</button><button type="button" class="secondary" data-act="cancel">Cancel</button></div>`, {
+    save: async () => {
+      const a = $('#p1').value, b = $('#p2').value;
+      if (!/^\d{4}$/.test(a)) return dErr('The PIN must be exactly 4 digits.');
+      if (a !== b) return dErr('The two PINs don\'t match.');
+      S.set('pin', await hash(a)); dlg.close(); updateLockBtn(); renderSettings(); toast('PIN set');
+    }
+  });
+  $('#p1').focus();
+}
+const updateLockBtn = () => { $('#btnLockNow').hidden = !S.get('pin'); };
+
+/* ---------- navigation ---------- */
+let current = 'log';
+function render(view = current) {
+  current = view;
+  ({log: renderLog, history: renderHistory, trends: renderTrends, report: renderReport, settings: renderSettings})[view]();
+}
+function show(view) {
+  $$('.view').forEach(v => v.hidden = v.id !== 'view-' + view);
+  $$('nav button').forEach(b => b.classList.toggle('active', b.dataset.view === view));
+  if (view !== 'log') $('#afterSave').hidden = true;
+  window.scrollTo(0, 0);
+  render(view);
+}
+
+/* ---------- init ---------- */
+async function init() {
+  applyTheme();
+  wireSegs(document);
+  $$('nav button').forEach(b => b.onclick = () => show(b.dataset.view));
+  $('#logForm').addEventListener('submit', saveReading);
+  $('#fSys').addEventListener('input', e => { if (e.target.value.length === 3) $('#fDia').focus(); });
+  $('#fTs').addEventListener('input', () => tsTouched = true);
+  $('#btnMed').onclick = () => medDialog();
+  $('#historyList').addEventListener('click', e => {
+    const r = e.target.closest('[data-r]'), m = e.target.closest('[data-m]');
+    if (r) editReading(r.dataset.r); else if (m) medDialog(m.dataset.m);
+  });
+  $('#hFilter').addEventListener('segchange', renderHistory);
+  $('#tRange').addEventListener('segchange', renderTrends);
+  $('#tPulse').checked = S.get('showPulse', false);
+  $('#tPulse').addEventListener('change', e => { S.set('showPulse', e.target.checked); renderTrends(); });
+  ['rStart', 'rDays', 'rExcl'].forEach(id => $('#' + id).addEventListener('change', () => {
+    S.set('rStart', $('#rStart').value); S.set('rDays', +$('#rDays').value); S.set('rExcl', $('#rExcl').checked); renderReport();
+  }));
+  $('#btnPrint').onclick = () => {
+    const {start, days, excl, incFrom, end} = reportBounds();
+    if (!inRange(start, end).length) return toast('No readings in this period yet');
+    buildPrint({title: 'Home blood pressure monitoring', from: start, to: end, exclTo: excl ? incFrom : null,
+      subtitle: `${days}-day home monitoring (NICE protocol)${excl ? ', day 1 discarded' : ''}.`});
+  };
+  $('#btnPrint30').onclick = () => {
+    const end = addDays(startOfDay(Date.now()), 1), from = addDays(end, -30);
+    if (!inRange(from, end).length) return toast('No readings in the last 30 days');
+    buildPrint({title: 'Home blood pressure readings', from, to: end, subtitle: 'Last 30 days.'});
+  };
+  $('#sTheme').addEventListener('segchange', e => { S.set('theme', e.detail); applyTheme(); });
+  $('#sName').addEventListener('change', e => S.set('name', e.target.value.trim()));
+  $('#btnPin').onclick = pinDialog;
+  $('#btnPinOff').onclick = async () => {
+    if (await ask('Remove PIN?', 'The app will open without a PIN.', [{label: 'Remove PIN', value: true, cls: 'primary danger'}, {label: 'Cancel', value: false}])) {
+      S.del('pin'); updateLockBtn(); renderSettings(); toast('PIN removed');
+    }
+  };
+  $('#btnCsv').onclick = exportCsv;
+  $('#btnMedCsv').onclick = exportMedCsv;
+  $('#btnBackup').onclick = backup;
+  $('#btnRestore').onclick = () => $('#fileRestore').click();
+  $('#fileRestore').onchange = e => { const f = e.target.files[0]; e.target.value = ''; if (f) restore(f); };
+  $('#btnWipe').onclick = async () => {
+    const ok = await ask('Delete all data?', `This permanently deletes all ${readings.length} readings and ${meds.length} medication entries from this phone. Make a backup first if you might want them.`,
+      [{label: 'Back up first', value: 'backup', cls: 'primary'}, {label: 'Delete everything', value: 'wipe', cls: 'secondary danger'}, {label: 'Cancel', value: null}]);
+    if (ok === 'backup') return backup();
+    if (ok === 'wipe') { await DB.clear('readings'); await DB.clear('meds'); await refresh(); toast('All data deleted'); }
+  };
+  // lock
+  $('#keypad').addEventListener('click', e => { const b = e.target.closest('[data-k]'); if (b) keyIn(b.dataset.k); });
+  document.addEventListener('keydown', e => { if (lockEl.hidden) return; if (/^\d$/.test(e.key)) keyIn(e.key); else if (e.key === 'Backspace') keyIn('del'); });
+  $('#btnLockNow').onclick = lock;
+  $('#forgotPin').onclick = async () => {
+    const ok = await ask('Forgot your PIN?', 'The PIN can\'t be recovered. You can reset the app, which <b>deletes all readings</b> on this phone. If you have a backup file you can restore it afterwards.',
+      [{label: 'Reset app and delete data', value: true, cls: 'primary danger'}, {label: 'Cancel', value: false}]);
+    if (ok) { await DB.clear('readings'); await DB.clear('meds'); S.del('pin'); updateLockBtn(); lockEl.hidden = true; await refresh(); toast('App reset'); }
+  };
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) { hiddenAt = Date.now(); return; }
+    if (S.get('pin') && hiddenAt && Date.now() - hiddenAt > 60000) lock();
+    if (current === 'log' || current === 'report') render();
+  });
+  let rz; window.addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => { if (current === 'trends') renderTrends(); }, 200); });
+
+  try { await DB.open(); }
+  catch (e) { document.querySelector('main').innerHTML = '<div class="card warn"><h2>Storage unavailable</h2><p>This browser blocked local storage, so readings can\'t be saved. Open the app in Chrome (not incognito).</p></div>'; return; }
+  await load();
+  updateLockBtn();
+  if (S.get('pin')) lock();
+  resetForm();
+  show('log');
+  if ('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+init();
+</script>
+</body>
+</html>
